@@ -2,6 +2,9 @@
 #include <mkl.h>
 #include <mkl_types.h>
 #include <omp.h>
+#include <sys/sysinfo.h>
+#include <unistd.h>
+#include <cstdlib>
 #include <string>
 #include <sstream>
 #include <iostream>
@@ -25,8 +28,10 @@ int main() {
 	cout << "Email: vpk24@drexel.edu" << endl;
 	cout << endl;
 
+	int numHost = sysconf(_SC_NPROCESSORS_ONLN);
+	cout << numHost << " hardware thread contexts detected." << endl;
 	int nthreads = 0;
-	AcquireInput(cout,cin,"Number of threads to use: ","Invalid value.\n",nthreads);
+	AcquireInput(cout,cin,"Number of OmpenMP threads to use: ","Invalid value.\n",nthreads);
 	//omp_set_dynamic(0);
 	omp_set_num_threads(nthreads);
 	int threadNum = omp_get_thread_num();
