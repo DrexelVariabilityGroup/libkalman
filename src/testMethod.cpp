@@ -31,10 +31,13 @@ int main() {
 	int numHost = sysconf(_SC_NPROCESSORS_ONLN);
 	cout << numHost << " hardware thread contexts detected." << endl;
 	int nthreads = 0;
-	AcquireInput(cout,cin,"Number of OmpenMP threads to use: ","Invalid value.\n",nthreads);
+	AcquireInput(cout,cin,"Number of OmpenMP threads to use: ","Invalid value!\n",nthreads);
 	//omp_set_dynamic(0);
 	omp_set_num_threads(nthreads);
 	int threadNum = omp_get_thread_num();
+
+	string basePath;
+	AcquireInput(cout,cin,"Full path to output directory: ","Invalid value!\n",basePath);
 
 	cout << "Create a test light curve with known parameters - make an ARMA light curve with p AR and q MA co-efficients." << endl;
 	int pMaster = 0, qMaster = 0;
@@ -153,7 +156,7 @@ int main() {
 	SystemMaster.observeSystem(numObs, distSeed, noiseSeed, distRand, noiseRand, noiseSigma, y);
 
 	cout << "Writing y" << endl;
-	string yPath = "/home/exarkun/Desktop/y.dat";
+	string yPath = basePath+"y.dat";
 	ofstream yFile;
 	yFile.open(yPath);
 	yFile.precision(16);
@@ -309,7 +312,7 @@ int main() {
 			printf("MCMC done. Writing result to ");
 			convertP << p;
 			convertQ << q;
-			myPath = "/home/exarkun/Desktop/mcmcOut_" + convertP.str() + "_" + convertQ.str() + ".dat";
+			myPath = basePath + "mcmcOut_" + convertP.str() + "_" + convertQ.str() + ".dat";
 			cout << myPath << endl;
 			newEnsemble.writeChain(myPath,1);
 			convertP.str("");
