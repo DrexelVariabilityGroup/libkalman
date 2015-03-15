@@ -1,5 +1,6 @@
 #include <malloc.h>
 #include <sys/time.h>
+#include <limits>
 #include <mathimf.h>
 #include <omp.h>
 #include <mkl.h>
@@ -47,6 +48,7 @@ double calcLnLike(double* walkerPos, void* func_args) {
 	int numPts = Data.numPts;
 	double* y = Data.y;
 	double* yerr = Data.yerr;
+	double* mask = Data.mask;
 
 	double LnLike = 0.0;
 
@@ -65,7 +67,7 @@ double calcLnLike(double* walkerPos, void* func_args) {
 		printf("calcLnLike - threadNum: %d; System good!\n",threadNum);
 		#endif
 
-		LnLike = Systems[threadNum].computeLnLike(numPts, y, yerr);
+		LnLike = Systems[threadNum].computeLnLike(numPts, y, yerr, mask);
 		} else {
 
 		#ifdef DEBUG_FUNC
@@ -1450,7 +1452,7 @@ void DLM::observeSystem(int numObs, unsigned int distSeed, unsigned int noiseSee
 	noiseFile.close();
 	#endif
 
-	for (MKL_INT64 i = 0; i < numObs; i++) {
+	for (int i = 0; i < numObs; i++) {
 
 		#ifdef DEBUG_OBS
 		cout << endl;
@@ -1484,7 +1486,7 @@ void DLM::observeSystem(int numObs, unsigned int distSeed, unsigned int noiseSee
 	vslDeleteStream(&noiseStream);
 	}
 
-void DLM::observeSystem(int numObs, unsigned int distSeed, unsigned int noiseSeed, double* distRand, double* noiseRand, double noiseSigma, double* mask, double* y) {
+void DLM::observeSystem(int numObs, unsigned int distSeed, unsigned int noiseSeed, double* distRand, double* noiseRand, double noiseSigma, double* y, double* mask) {
 
 	mkl_domain_set_num_threads(1, MKL_DOMAIN_ALL);
 	VSLStreamStatePtr distStream __attribute__((aligned(64)));
@@ -1493,47 +1495,52 @@ void DLM::observeSystem(int numObs, unsigned int distSeed, unsigned int noiseSee
 	vslNewStream(&noiseStream, VSL_BRNG_SFMT19937, noiseSeed);
 	vdRngGaussian(VSL_RNG_METHOD_GAUSSIAN_ICDF, distStream, numObs, distRand, 0.0, distSigma);
 	vdRngGaussian(VSL_RNG_METHOD_GAUSSIAN_ICDF, noiseStream, numObs, noiseRand, 0.0, noiseSigma);
-	for (MKL_INT64 i = 0; i < numObs; i++) {
 
-		#ifdef DEBUG
+	#ifdef WRITE
+	string distPath = "/home/exarkun/Desktop/dist.dat";
+	string noisePath = "/home/exarkun/Desktop/noise.dat";
+	ofstream distFile, noiseFile;
+	distFile.open(distPath);
+	noiseFile.open(noisePath);
+	distFile.precision(16);
+	noiseFile.precision(16);
+	for (int i = 0; i < numObs-1; i++) {
+		distFile << noshowpos << scientific << distRand[i] << endl;
+		noiseFile << noshowpos << scientific << noiseRand[i] << endl;
+		}
+	distFile << noshowpos << scientific << distRand[numObs-1];
+	noiseFile << noshowpos << scientific << noiseRand[numObs-1];
+	distFile.close();
+	noiseFile.close();
+	#endif
+
+	for (int i = 0; i < numObs; i++) {
+
+		#ifdef DEBUG_OBS
 		cout << endl;
-		cout << "X[" << i << "]" << endl;
-		for (int j = 0; j < m; j++) {
-			cout << X[j] << endl;
-			}
+		cout << "i: " << i << endl;
+		cout << "Disturbance: " << distRand[i] << endl;
+		cout << "X_-" << endl;
+		viewMatrix(m, 1, X);
 		#endif
 
 		cblas_dgemv(CblasColMajor, CblasNoTrans, m, m, 1.0, F, m, X, 1, 0.0, VScratch, 1);
 		cblas_dcopy(m, VScratch, 1, X, 1);
-
-		#ifdef DEBUG
-		cout << "F*X[" << i << "]" << endl;
-		for (int j = 0; j < m; j++) {
-			cout << X[j] << endl;
-			}
-		cout << "disturbance[" << i << "]: " << distRand[i] << endl;
-		#endif
-
 		cblas_daxpy(m, distRand[i], D, 1, X, 1);
 
-		#ifdef DEBUG
-		cout << "F*X[" << i << "] + D*disturbance[" << i << "]" << endl;
-		for (int j = 0; j < m; j++) {
-			cout << X[j] << endl;
-			}
-		cout << "noise[" << i << "]: " << noiseRand[i] << endl;
+		#ifdef DEBUG_OBS
+		cout << "X_+" << endl;
+		viewMatrix(m, 1, X);
+		cout << "Noise: " << noiseRand[i] << endl;
 		#endif
 
-		if (mask[i] != 0.0) {
-			//y[i] = cblas_ddot(m, H, 1, X, 1) + noiseRand[i];
-			y[i] = X[0] + noiseRand[i];
-			} else {
-			y[i] = 0.0;
-			}
+		//y[i] = cblas_ddot(m, H, 1, X, 1) + noiseRand[i];
+		y[i] = mask[i]*(X[0] + noiseRand[i]);
 
-		#ifdef DEBUG
-		cout << "y[" << i << "]" << endl;
+		#ifdef DEBUG_OBS
+		cout << "y" << endl;
 		cout << y[i] << endl;
+		cout << endl;
 		#endif
 
 		}
@@ -1542,6 +1549,170 @@ void DLM::observeSystem(int numObs, unsigned int distSeed, unsigned int noiseSee
 	}
 
 double DLM::computeLnLike(int numPts, double* y, double* yerr) {
+
+	mkl_domain_set_num_threads(1, MKL_DOMAIN_ALL);
+	double LnLike = 0.0;
+	double v = 0.0;
+	double S = 0.0;
+	double SInv = 0.0;
+
+	#ifdef DEBUG_LNLIKE
+	cout << endl;
+	#endif
+
+	for (int i = 0; i < numPts; i++) {
+		R[0] = yerr[i]*yerr[i]; // Heteroskedastic errors
+
+		#ifdef DEBUG_LNLIKE
+		cout << endl;
+		cout << "Pt:" << i << endl;
+		#endif
+
+		#ifdef DEBUG_LNLIKE
+		cout << "X" << endl;
+		cout << "--------" << endl;
+		viewMatrix(m, 1, X);
+		cout << endl;
+		#endif
+
+		#ifdef DEBUG_LNLIKE
+		cout << "P" << endl;
+		cout << "--------" << endl;
+		viewMatrix(m, m, P);
+		cout << endl;
+		#endif
+
+		cblas_dgemv(CblasColMajor, CblasNoTrans, m, m, 1.0, F, m, X, 1, 0.0, XMinus, 1); // Compute XMinus = F*X
+
+		#ifdef DEBUG_LNLIKE
+		cout << "XMinus" << endl;
+		cout << "--------" << endl;
+		viewMatrix(m, 1, XMinus);
+		cout << endl;
+		#endif
+
+		cblas_dgemm(CblasColMajor, CblasNoTrans, CblasNoTrans, m, m, m, 1.0, F, m, P, m, 0.0, MScratch, m); // Compute MScratch = F*P
+
+		cblas_dgemm(CblasColMajor, CblasNoTrans, CblasTrans, m, m, m, 1.0, MScratch, m, F, m, 0.0, PMinus, m); // Compute PMinus = MScratch*F_Transpose
+
+		cblas_dgemm(CblasColMajor, CblasNoTrans, CblasNoTrans, m, m, m, 1.0, I, m, Q, m, 1.0, PMinus, m); // Compute PMinus = I*Q + PMinus;
+
+		#ifdef DEBUG_LNLIKE
+		cout << "PMinus" << endl;
+		cout << "--------" << endl;
+		viewMatrix(m, m, PMinus);
+		cout << endl;
+		#endif
+
+		#ifdef DEBUG_LNLIKE
+		cout << "y[" << i << "]: " << y[i] << endl;
+		cout << endl;
+		#endif
+
+		#ifdef DEBUG_LNLIKE
+		cout << "XMinus[0]: " << XMinus[0] << endl;
+		cout << endl;
+		#endif
+
+		v = y[i] - XMinus[0]; // Compute v = y - H*X
+
+		#ifdef DEBUG_LNLIKE
+		cout << "v[" << i << "]: " << v << endl;
+		cout << endl;
+		#endif
+
+		cblas_dgemv(CblasColMajor, CblasTrans, m, m, 1.0, PMinus, m, H, 1, 0.0, K, 1); // Compute K = PMinus*H_Transpose
+
+		S = cblas_ddot(m, K, 1, H, 1) + R[0]; // Compute S = H*K + R
+
+		#ifdef DEBUG_LNLIKE
+		cout << "S[" << i << "]: " << S << endl;
+		cout << endl;
+		#endif
+
+		SInv = 1.0/S;
+
+		#ifdef DEBUG_LNLIKE
+		cout << "inverseS[" << i << "]: " << SInv << endl;
+		cout << endl;
+		#endif
+
+		cblas_dscal(m, SInv, K, 1); // Compute K = SInv*K
+
+		#ifdef DEBUG_LNLIKE
+		cout << "K" << endl;
+		cout << "--------" << endl;
+		viewMatrix(m, 1, K);
+		cout << endl;
+		#endif
+
+		for (int colCounter = 0; colCounter < m; colCounter++) {
+			#pragma omp simd
+			for (int rowCounter = 0; rowCounter < m; rowCounter++) {
+				MScratch[rowCounter*m+colCounter] = I[colCounter*m+rowCounter] - K[colCounter]*H[rowCounter]; // Compute MScratch = I - K*H
+				}
+			}
+
+		#ifdef DEBUG_LNLIKE
+		cout << "IMinusKH" << endl;
+		cout << "--------" << endl;
+		viewMatrix(m, m, MScratch);
+		cout << endl;
+		#endif
+
+		cblas_dcopy(m, K, 1, VScratch, 1); // Compute VScratch = K
+
+		cblas_dgemv(CblasColMajor, CblasNoTrans, m, m, 1.0, MScratch, m, XMinus, 1, y[i], VScratch, 1); // Compute X = VScratch*y[i] + MScratch*XMinus
+
+		#ifdef DEBUG_LNLIKE
+		cout << "VScratch == X" << endl;
+		cout << "--------" << endl;
+		viewMatrix(m, 1, VScratch);
+		cout << endl;
+		#endif
+
+		cblas_dcopy(m, VScratch, 1, X, 1); // Compute X = VScratch
+
+		#ifdef DEBUG_LNLIKE
+		cout << "X" << endl;
+		cout << "--------" << endl;
+		viewMatrix(m, 1, X);
+		cout << endl;
+		#endif
+
+		cblas_dgemm(CblasColMajor, CblasNoTrans, CblasNoTrans, m, m, m, 1.0, MScratch, m, PMinus, m, 0.0, P, m); // Compute P = IMinusKH*PMinus
+
+		cblas_dgemm(CblasColMajor, CblasNoTrans, CblasTrans, m, m, m, 1.0, P, m, MScratch, m, 0.0, PMinus, m); // Compute PMinus = P*IMinusKH_Transpose
+
+		for (int colCounter = 0; colCounter < m; colCounter++) {
+			#pragma omp simd
+			for (int rowCounter = 0; rowCounter < m; rowCounter++) {
+				P[colCounter*m+rowCounter] = PMinus[colCounter*m+rowCounter] + R[0]*K[colCounter]*K[rowCounter]; // Compute P = PMinus + K*R*K_Transpose
+				}
+			}
+
+		#ifdef DEBUG_LNLIKE
+		cout << "P" << endl;
+		cout << "--------" << endl;
+		viewMatrix(m, m, P);
+		cout << endl;
+		#endif
+
+		LnLike += -0.5*SInv*pow(v,2.0) -0.5*log2(S)/log2OfE; // LnLike += -0.5*v*v*SInv -0.5*log(det(S)) -0.5*log(2.0*pi)
+
+		#ifdef DEBUG_LNLIKE
+		cout << "Add LnLike: " << -0.5*SInv*pow(v,2.0) -0.5*log2(S)/log2OfE << endl;
+		cout << endl;
+		#endif
+
+		}
+	LnLike += -0.5*numPts*log2Pi;
+	return LnLike;
+	}
+
+double DLM::computeLnLike(int numPts, double* y, double* yerr, double* mask) {
+
+	double maxDouble = numeric_limits<double>::max();
 
 	mkl_domain_set_num_threads(1, MKL_DOMAIN_ALL);
 	double LnLike = 0.0;
