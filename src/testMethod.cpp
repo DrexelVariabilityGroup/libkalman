@@ -148,7 +148,7 @@ int main() {
 	int numObs = 0;
 	do {
 		cout << "Number of observations (numObs) in the light curve? (Must be greater than 0)" << endl;
-		AcquireInput(cout,cin,"numObs: ","Invalid value.\n",numObs);
+		AcquireInput(cout,cin,"Number of observations: ","Invalid value.\n",numObs);
 		} while (numObs <= 0); 
 	double noiseSigma = 0.0;
 	do {
