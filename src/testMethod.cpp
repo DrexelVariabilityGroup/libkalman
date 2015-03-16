@@ -163,7 +163,7 @@ int main() {
 	Equatorial keplerPos = Equatorial(loc);
 	KeplerObj newguy(keplerID, keplerPath, keplerPos);
 	bool forceCalibrate = true;
-	AcquireInput(cout,cin,"Force calibration?: ","Invalid value.\n",forceCalibrate);
+	AcquireInput(cout,cin,"Force calibration? (Recommended that you don't calibrate more than once ever!): ","Invalid value.\n",forceCalibrate);
 	tuple<vector<array<int,2>>,vector<array<double,5>>> dataArray;
 	int stitchMethod = -1;
 	if (forceCalibrate == true) {
