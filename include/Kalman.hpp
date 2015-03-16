@@ -61,8 +61,9 @@ public:
 	double observeSystem(double distRand, double noiseRand);
 	double observeSystem(double distRand, double noiseRand, double mask);
 	void observeSystem(int numObs, unsigned int distSeed, unsigned int noiseSeed, double* distRand, double* noiseRand, double noiseSigma, double* y);
-	void observeSystem(int numObs, unsigned int distSeed, unsigned int noiseSeed, double* distRand, double* noiseRand, double noiseSigma, double* mask, double* y);
+	void observeSystem(int numObs, unsigned int distSeed, unsigned int noiseSeed, double* distRand, double* noiseRand, double noiseSigma, double* y, double* mask);
 	double computeLnLike(int numPts, double* y, double* yerr);
+	double computeLnLike(int numPts, double* y, double* yerr, double* mask);
 	void getResiduals(int numPts, double* y, double* r);
 	void fixedIntervalSmoother(int numPts, double* y, double* r, double* x);
 	};
@@ -71,6 +72,7 @@ struct LnLikeData {
 	int numPts;
 	double* y;
 	double* yerr;
+	double* mask;
 	};
 
 struct LnLikeArgs {

@@ -31,6 +31,8 @@ KeplerObj::KeplerObj(string id, string path, Equatorial loc) {
 		Order = 0;
 		Location = loc;
 		StartEpoch = 0.0;
+		FirstCadence = 0;
+		LastCadence = 0;
 		MeanFlux = 0.0;
 		NumCadences = 0;
 		NumLags = 0;
@@ -467,7 +469,7 @@ void KeplerObj::mergeQuarters(tuple<vector<array<int,2>>,vector<array<double,5>>
 	}
 
 tuple<vector<array<int,2>>,vector<array<double,5>>> KeplerObj::getData(int stitchMethod) {
-	bool forceCalibrate = false;
+	bool forceCalibrate = true;
 	tuple<vector<array<int,2>>,vector<array<double,5>>> dataArray = getData(forceCalibrate, stitchMethod);
 	return dataArray;
 	}
@@ -542,8 +544,18 @@ tuple<vector<array<int,2>>,vector<array<double,5>>> KeplerObj::getData(bool forc
 		NumQuarters = 1;
 		dataFile.close();
 		tuple<vector<array<int,2>>,vector<array<double,5>>> dataArray(cadenceVec,dataVec);
+		FirstCadence = get<0>(dataArray)[0][0];
+		LastCadence = get<0>(dataArray)[NumCadences-1][0];
 		return dataArray;
 		}
+	}
+
+int KeplerObj::getFirstCadence() {
+	return FirstCadence;
+	}
+
+int KeplerObj::getLastCadence() {
+	return LastCadence;
 	}
 
 void KeplerObj::setProperties(const tuple<vector<array<int,2>>,vector<array<double,5>>>& dataArray) {

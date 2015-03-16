@@ -12,7 +12,7 @@ class KeplerObj: public Obj {
 private:
 	string ID, Path;
 	Equatorial Location;
-	int Order, NumQuarters, NumCadences, NumLags, OverSampleFactor, LengthFactor, NumSimsSI, NumSimsSII, NumSimsCS, MaxEvalsSI, MaxEvalsSII, MaxEvalsCS, NumChiSq, Stage, NumSeeds;
+	int Order, NumQuarters, NumCadences, NumLags, FirstCadence, LastCadence, OverSampleFactor, LengthFactor, NumSimsSI, NumSimsSII, NumSimsCS, MaxEvalsSI, MaxEvalsSII, MaxEvalsCS, NumChiSq, Stage, NumSeeds;
 	double StartEpoch, MeanFlux, FracHOST, FracMIC, FTolSI, FTolSII;
 	tuple<vector<array<int,2>>,vector<array<double,5>>> readRawData();
 	vector<int> getQuarterList(const tuple<vector<array<int,2>>,vector<array<double,5>>>& dataArray);
@@ -39,6 +39,8 @@ public:
 	int getNumQuarters();
 	double getStartEpoch();
 	double getMeanFlux();
+	int getFirstCadence();
+	int getLastCadence();
 	void setFracHOST(double fracHOST);
 	double getFracHOST();
 	void setFracMIC(double fracMIC);
