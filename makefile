@@ -33,7 +33,7 @@ MKL_MIC_LIBS=-L$(MKLROOT)/lib/mic -lmkl_intel_ilp64 -lmkl_intel_thread -lmkl_cor
 NLOPTLIBS = -lnlopt
 OMPFLAGS = -openmp -openmp-simd
 
-REPORTFLAG = -qopt-report=0 -qopt-report-phase=vec -qopt-report-file=stdout -openmp-report=0
+REPORTFLAG = -qopt-report-phase=vec -qopt-report-file=stdout -openmp-report=0
 #-guide
 # -opt-report-phase=offload
 
@@ -63,7 +63,7 @@ all: $(EXEC1) $(EXEC2)
 # $(EXEC3)
 
 $(EXEC1): $(OBJECTS) $(patsub %,$(EXEC1)%,$(EXT))
-	$(CPPC) $(VERFLAGS) -xHost $(CPPFLAGS) $(FPFLAG) $(MKLFLAGS) $(OMPFLAGS) -I $(IDIR)  $(REPORTFLAG) $^ $(SRCDIR)/$(EXEC1)$(EXT) $(OMPFLAGS) $(MKL_LIBS) -o $@
+	$(CPPC) $(VERFLAGS) -xHost $(CPPFLAGS) $(FPFLAG) $(MKLFLAGS) $(OMPFLAGS) -I $(IDIR)  $(REPORTFLAG) $^ $(SRCDIR)/$(EXEC1)$(EXT) $(OMPFLAGS) $(MKL_LIBS) $(BOOSTLINK) -o $@
 
 $(EXEC2): $(OBJECTS) $(patsub %,$(EXEC2)%,$(EXT))
 	$(CPPC) $(VERFLAGS) -xHost $(CPPFLAGS) $(FPFLAG) $(MKLFLAGS) $(OMPFLAGS) -I $(IDIR)  $(REPORTFLAG) $^ $(SRCDIR)/$(EXEC2)$(EXT) $(OMPFLAGS) $(MKL_LIBS) $(BOOSTLINK) -o $@

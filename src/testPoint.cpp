@@ -6,7 +6,7 @@
 #include <sstream>
 #include <iostream>
 #include <fstream>
-#include "AcquireInput.hpp"
+#include "Acquire.hpp"
 #include "Kalman.hpp"
 #include "MCMC.hpp"
 
