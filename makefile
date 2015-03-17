@@ -53,9 +53,9 @@ _OBJECTS = Constants.o Utilities.o Universe.o Spherical.o Obj.o Kepler.o Kalman.
 # PRH.o DLAPACKE.o
 OBJECTS = $(patsubst %,$(ODIR)/%,$(_OBJECTS))
 
-EXEC3 = testKalmanCPP
 EXEC1 = testPoint
 EXEC2 = testMethod
+EXEC3 = testKalmanCPP
 EXT = .cpp
 
 all: $(EXEC1) $(EXEC2)
