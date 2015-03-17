@@ -1,5 +1,6 @@
 testPoint
 testMethod
+src/obj/*.o
 *.optrpt
 
 ################################ Standard ##########################
