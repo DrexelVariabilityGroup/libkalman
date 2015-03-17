@@ -37,7 +37,7 @@ void AcquireDirectory(ostream& Os, istream& Is, const string& Prompt, const stri
 					//cout << "Valid path! " << inputPath << endl;
 					validPath = true;
 					} catch (filesystem_error) {
-					cout << "Invalid path!" << endl;
+					cout << FailString << endl;
 					}
 				} else {
 				//cout << "Absolute path!" << endl;
@@ -46,12 +46,12 @@ void AcquireDirectory(ostream& Os, istream& Is, const string& Prompt, const stri
 					//cout << "Valid path! " << inputPath << endl;
 					validPath = true;
 					} catch (filesystem_error) {
-					cout << "Invalid path!" << endl;
+					cout << FailString << endl;
 					}
 				}
 			} while (!validPath);
 		if (is_regular_file(inputPath)) {
-			cout << "Error! " << inputPath << "is a file!" << endl;
+			cout << FailString << endl;
 			continue;
 			} else {
 			Result = inputPath.string();

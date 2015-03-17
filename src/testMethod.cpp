@@ -35,6 +35,16 @@ int main() {
 	cout << "Email: vpk24@drexel.edu" << endl;
 	cout << endl;
 
+	string basePath;
+	AcquireDirectory(cout,cin,"Full path to output directory: ","Invalid path!\n",basePath);
+	basePath += "/";
+	cout << "Output directory: " << basePath << endl;
+
+	string keplerPath;
+	AcquireDirectory(cout,cin,"Full path to Kepler directory: ","Invalid path!\n",keplerPath);
+	keplerPath += "/";
+	cout << "Kepler directory: " << keplerPath << endl;
+
 	int numHost = sysconf(_SC_NPROCESSORS_ONLN);
 	cout << numHost << " hardware thread contexts detected." << endl;
 	int nthreads = 0;
@@ -42,10 +52,6 @@ int main() {
 	//omp_set_dynamic(0);
 	omp_set_num_threads(nthreads);
 	int threadNum = omp_get_thread_num();
-
-	string basePath, keplerPath;
-	AcquireDirectory(cout,cin,"Full path to output directory: ","Invalid value!\n",basePath);
-	AcquireDirectory(cout,cin,"Full path to Kepler directory: ","Invalid value!\n",keplerPath);
 
 	cout << "Create a test light curve with known parameters - make an ARMA light curve with p AR and q MA co-efficients." << endl;
 	int pMaster = 0, qMaster = 0;
@@ -147,8 +153,7 @@ int main() {
 
 	int numObs = 0;
 	do {
-		cout << "Number of observations (numObs) in the light curve? (Must be greater than 0)" << endl;
-		AcquireInput(cout,cin,"Number of observations: ","Invalid value.\n",numObs);
+		AcquireInput(cout,cin,"Number of observations (Must be greater than 0): ","Invalid value.\n",numObs);
 		} while (numObs <= 0); 
 	double noiseSigma = 0.0;
 	do {
