@@ -3,6 +3,7 @@ CPPC = icpc
 IDIR = include/
 SRCDIR = src
 ODIR = src/obj
+BOOSTLINK = -Bstatic -lboost_system -lboost_filesystem -lboost_system
 BOOSTLIB = ~/Documents/Research/code/trunk/Boost/boost_1_57_0/
 
 VERFLAGS = -gxx-name=g++-4.8 -std=c++11 -g -Wall
@@ -45,11 +46,11 @@ REPORTFLAG = -qopt-report=0 -qopt-report-phase=vec -qopt-report-file=stdout -ope
 #     source     - enables intermediates in source precision
 #     strict     - enables -fp-model precise -fp-model except and disables floating point multiply add
 
-_DEPENDENCIES = Constants.hpp Utilities.hpp AcquireInput.hpp Universe.hpp Spherical.hpp Obj.hpp Kepler.hpp Kalman.hpp MCMC.hpp
+_DEPENDENCIES = Constants.hpp Utilities.hpp Acquire.hpp Universe.hpp Spherical.hpp Obj.hpp Kepler.hpp Kalman.hpp MCMC.hpp
 #PRH.hpp DLAPACKE.hpp
 DEPENDENCIES = $(patsubst %,$(IDIR)/%,$(_DEPENDENCIES))
 
-_OBJECTS = Constants.o Utilities.o Universe.o Spherical.o Obj.o Kepler.o Kalman.o MCMC.o
+_OBJECTS = Constants.o Utilities.o Acquire.o Universe.o Spherical.o Obj.o Kepler.o Kalman.o MCMC.o
 # PRH.o DLAPACKE.o
 OBJECTS = $(patsubst %,$(ODIR)/%,$(_OBJECTS))
 
@@ -65,7 +66,7 @@ $(EXEC1): $(OBJECTS) $(patsub %,$(EXEC1)%,$(EXT))
 	$(CPPC) $(VERFLAGS) -xHost $(CPPFLAGS) $(FPFLAG) $(MKLFLAGS) $(OMPFLAGS) -I $(IDIR)  $(REPORTFLAG) $^ $(SRCDIR)/$(EXEC1)$(EXT) $(OMPFLAGS) $(MKL_LIBS) -o $@
 
 $(EXEC2): $(OBJECTS) $(patsub %,$(EXEC2)%,$(EXT))
-	$(CPPC) $(VERFLAGS) -xHost $(CPPFLAGS) $(FPFLAG) $(MKLFLAGS) $(OMPFLAGS) -I $(IDIR)  $(REPORTFLAG) $^ $(SRCDIR)/$(EXEC2)$(EXT) $(OMPFLAGS) $(MKL_LIBS) -o $@
+	$(CPPC) $(VERFLAGS) -xHost $(CPPFLAGS) $(FPFLAG) $(MKLFLAGS) $(OMPFLAGS) -I $(IDIR)  $(REPORTFLAG) $^ $(SRCDIR)/$(EXEC2)$(EXT) $(OMPFLAGS) $(MKL_LIBS) $(BOOSTLINK) -o $@
 
 $(EXEC3): $(OBJECTS) $(patsub %,$(EXEC3)%,$(EXT))
 	$(CPPC) $(VERFLAGS) -xHost $(CPPFLAGS) $(FPFLAG) $(MKLFLAGS) $(OMPFLAGS) -I $(IDIR)  $(REPORTFLAG) $^ $(SRCDIR)/$(EXEC3)$(EXT) $(OMPFLAGS) $(MKL_LIBS) -o $@

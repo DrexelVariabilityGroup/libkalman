@@ -12,7 +12,7 @@
 #include <sstream>
 #include <iostream>
 #include <fstream>
-#include "AcquireInput.hpp"
+#include "Acquire.hpp"
 #include "Kalman.hpp"
 #include "Universe.hpp"
 #include "Kepler.hpp"
@@ -44,8 +44,8 @@ int main() {
 	int threadNum = omp_get_thread_num();
 
 	string basePath, keplerPath;
-	AcquireInput(cout,cin,"Full path to output directory: ","Invalid value!\n",basePath);
-	AcquireInput(cout,cin,"Full path to Kepler directory: ","Invalid value!\n",keplerPath);
+	AcquireDirectory(cout,cin,"Full path to output directory: ","Invalid value!\n",basePath);
+	AcquireDirectory(cout,cin,"Full path to Kepler directory: ","Invalid value!\n",keplerPath);
 
 	cout << "Create a test light curve with known parameters - make an ARMA light curve with p AR and q MA co-efficients." << endl;
 	int pMaster = 0, qMaster = 0;
